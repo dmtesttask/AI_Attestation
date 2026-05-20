@@ -109,7 +109,7 @@ if ! gcloud compute instances describe "$VM_NAME" --zone="$ZONE" >/dev/null 2>&1
     gcloud compute instances create "$VM_NAME" \
         --zone="$ZONE" \
         --machine-type="e2-micro" \
-        --image-family="ubuntu-2404-lts" \
+        --image-family="ubuntu-2404-lts-amd64" \
         --image-project="ubuntu-os-cloud" \
         --boot-disk-size="30GB" \
         --boot-disk-type="pd-standard" \
