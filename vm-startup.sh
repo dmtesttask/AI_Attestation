@@ -84,6 +84,7 @@ echo "[...] Initializing OpenClaw environment..."
 # Run onboard command under the openclaw user context
 sudo -u openclaw -i openclaw onboard --non-interactive \
   --accept-risk \
+  --skip-health \
   --mode local \
   --auth-choice gemini-api-key \
   --gemini-api-key "$GEMINI_API_KEY"
