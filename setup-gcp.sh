@@ -143,24 +143,25 @@ echo -e "${GREEN}[✔] Встановлення та ініціалізацію 
 echo -e "${YELLOW}[...] Розгортання персонажів агентів та правил оркестрації на ВМ...${NC}"
 
 # Create directories in target VM just in case
-gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="sudo -u openclaw -i mkdir -p /home/openclaw/.openclaw/agents /home/openclaw/.openclaw/workspace" --quiet
+gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="sudo -u openclaw -i mkdir -p /home/openclaw/.openclaw/agents /home/openclaw/.openclaw/workspace && mkdir -p /tmp/openclaw-agents" --quiet
 
 # SCP the local config files to a temporary location on the VM
 echo -e "${YELLOW}[...] Передача файлів...${NC}"
-gcloud compute scp --recurse ./config/agents/* "${VM_NAME}:/tmp/" --zone="$ZONE" --quiet
+gcloud compute scp --recurse ./config/agents/* "${VM_NAME}:/tmp/openclaw-agents/" --zone="$ZONE" --quiet
 gcloud compute scp ./config/workspace/AGENTS.md "${VM_NAME}:/tmp/AGENTS.md" --zone="$ZONE" --quiet
 
 # Move files to openclaw directory and change ownership
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
   sudo mv /tmp/AGENTS.md /home/openclaw/.openclaw/workspace/AGENTS.md
-  # Move each agent folder from /tmp to ~/.openclaw/agents/
-  for agent_path in /tmp/*/ ; do
+  # Move each agent folder from /tmp/openclaw-agents to ~/.openclaw/agents/
+  for agent_path in /tmp/openclaw-agents/* ; do
     if [ -d \"\$agent_path\" ]; then
       agent_name=\$(basename \"\$agent_path\")
       sudo rm -rf \"/home/openclaw/.openclaw/agents/\$agent_name\"
       sudo mv \"\$agent_path\" \"/home/openclaw/.openclaw/agents/\$agent_name\"
     fi
   done
+  sudo rm -rf /tmp/openclaw-agents
   sudo chown -R openclaw:openclaw /home/openclaw/.openclaw
   sudo systemctl restart openclaw
 " --quiet

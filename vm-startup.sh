@@ -102,6 +102,14 @@ sudo -u openclaw -i openclaw config set channels.telegram.enabled true
 sudo -u openclaw -i openclaw config set channels.telegram.botToken "$TELEGRAM_BOT_TOKEN"
 sudo -u openclaw -i openclaw config set channels.telegram.dmPolicy "pairing"
 
+# Configure LLM provider settings (timeouts, models)
+echo "[...] Configuring Google Gemini provider timeout and settings..."
+sudo -u openclaw -i openclaw config set models.providers.google '{"api": "google-generative-ai", "baseUrl": "https://generativelanguage.googleapis.com", "timeoutSeconds": 300, "models": [{"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash"}]}' --strict-json --merge
+
+# Configure subagent execution permissions (allowAgents)
+echo "[...] Configuring subagent permissions..."
+sudo -u openclaw -i openclaw config set agents.defaults.subagents.allowAgents '["academic-critic", "art-director", "music-historian", "music-pedagogue", "music-performer", "music-theorist", "radical-curator"]' --strict-json --merge
+
 echo "[✔] OpenClaw configuration complete."
 
 # 7. Create Systemd Service
