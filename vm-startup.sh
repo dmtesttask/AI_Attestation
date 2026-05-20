@@ -24,6 +24,9 @@ echo "[✔] NPM version: $(npm -v)"
 # 3. Install OpenClaw CLI globally
 echo "[...] Installing OpenClaw CLI globally..."
 npm install -g openclaw@latest
+cd "$(npm root -g)/openclaw"
+node scripts/postinstall-bundled-plugins.mjs
+cd -
 echo "[✔] OpenClaw installed successfully."
 
 # 4. Create dedicated user
@@ -91,7 +94,7 @@ sudo -u openclaw -i openclaw onboard --non-interactive \
 
 # Set default LLM model
 echo "[...] Setting Google Gemini 2.5 Flash as default model..."
-sudo -u openclaw -i openclaw models set google-gemini/gemini-2.5-flash
+sudo -u openclaw -i openclaw models set google/gemini-2.5-flash
 
 # Configure channels in openclaw.json
 echo "[...] Configuring Telegram Channel..."

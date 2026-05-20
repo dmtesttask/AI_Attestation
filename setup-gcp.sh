@@ -105,10 +105,10 @@ fi
 
 # If instance doesn't exist, create it
 if ! gcloud compute instances describe "$VM_NAME" --zone="$ZONE" >/dev/null 2>&1; then
-    echo -e "${YELLOW}[...] Створення віртуальної машини (e2-micro Always Free в us-central1)...${NC}"
+    echo -e "${YELLOW}[...] Створення віртуальної машини (e2-medium в us-central1)...${NC}"
     gcloud compute instances create "$VM_NAME" \
         --zone="$ZONE" \
-        --machine-type="e2-micro" \
+        --machine-type="e2-medium" \
         --image-family="ubuntu-2404-lts-amd64" \
         --image-project="ubuntu-os-cloud" \
         --boot-disk-size="30GB" \
