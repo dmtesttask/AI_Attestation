@@ -94,11 +94,11 @@ sudo -u openclaw -i openclaw onboard --non-interactive \
 
 # Configure LLM provider settings (timeouts, models)
 echo "[...] Configuring Google Gemini provider timeout and settings..."
-sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\": \"google-generative-ai\", \"baseUrl\": \"https://generativelanguage.googleapis.com\", \"timeoutSeconds\": 300, \"apiKey\": \"$GEMINI_API_KEY\", \"models\": [{\"id\": \"gemma-4-31b-it\", \"name\": \"Gemma 4 31B\"}]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\": \"google-generative-ai\", \"baseUrl\": \"https://generativelanguage.googleapis.com\", \"timeoutSeconds\": 300, \"apiKey\": \"$GEMINI_API_KEY\", \"models\": [{\"id\": \"gemma-4-31b-it\", \"name\": \"Gemma 4 31B\"}, {\"id\": \"gemma-4-26b-a4b-it\", \"name\": \"Gemma 4 26B\"}]}" --strict-json --merge
 
 # Set default LLM model
-echo "[...] Setting Google Gemma 4 31B as default model..."
-sudo -u openclaw -i openclaw models set google-gemini/gemma-4-31b-it
+echo "[...] Setting Google Gemma 4 26B as default model..."
+sudo -u openclaw -i openclaw models set google-gemini/gemma-4-26b-a4b-it
 
 # Configure channels in openclaw.json
 echo "[...] Configuring Telegram Channel..."
