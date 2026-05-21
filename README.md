@@ -17,7 +17,7 @@
 2. У правому верхньому кутку натисніть іконку **Activate Cloud Shell** (>_), щоб відкрити термінал у браузері.
 3. Зробіть клон вашого репозиторію з проєктом:
    ```bash
-   git clone <URL_ВАШОГО_РЕПОЗИТОРІЮ> OpenClaw
+   git clone https://github.com/dmtesttask/AI_Attestation.git OpenClaw
    ```
 4. Перейдіть до каталогу авторозгортання:
    ```bash
