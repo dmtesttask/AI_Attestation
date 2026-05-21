@@ -92,9 +92,13 @@ sudo -u openclaw -i openclaw onboard --non-interactive \
   --auth-choice gemini-api-key \
   --gemini-api-key "$GEMINI_API_KEY"
 
+# Configure LLM provider settings (timeouts, models)
+echo "[...] Configuring Google Gemini provider timeout and settings..."
+sudo -u openclaw -i openclaw config set models.providers.google-gemini '{"api": "google-generative-ai", "baseUrl": "https://generativelanguage.googleapis.com", "timeoutSeconds": 300, "models": [{"id": "gemma-4-31b-it", "name": "Gemma 4 31B"}]}' --strict-json --merge
+
 # Set default LLM model
-echo "[...] Setting Google Gemini 2.5 Flash as default model..."
-sudo -u openclaw -i openclaw models set google/gemini-2.5-flash
+echo "[...] Setting Google Gemma 4 31B as default model..."
+sudo -u openclaw -i openclaw models set google-gemini/gemma-4-31b-it
 
 # Configure channels in openclaw.json
 echo "[...] Configuring Telegram Channel..."
@@ -102,13 +106,13 @@ sudo -u openclaw -i openclaw config set channels.telegram.enabled true
 sudo -u openclaw -i openclaw config set channels.telegram.botToken "$TELEGRAM_BOT_TOKEN"
 sudo -u openclaw -i openclaw config set channels.telegram.dmPolicy "pairing"
 
-# Configure LLM provider settings (timeouts, models)
-echo "[...] Configuring Google Gemini provider timeout and settings..."
-sudo -u openclaw -i openclaw config set models.providers.google '{"api": "google-generative-ai", "baseUrl": "https://generativelanguage.googleapis.com", "timeoutSeconds": 300, "models": [{"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash"}]}' --strict-json --merge
-
 # Configure subagent execution permissions (allowAgents)
 echo "[...] Configuring subagent permissions..."
 sudo -u openclaw -i openclaw config set agents.defaults.subagents.allowAgents '["academic-critic", "art-director", "music-historian", "music-pedagogue", "music-performer", "music-theorist", "radical-curator"]' --strict-json --merge
+
+# Rebuild the plugin registry for the openclaw user to prevent stale/missing plugin errors
+echo "[...] Rebuilding plugin registry..."
+sudo -u openclaw -i openclaw doctor --fix
 
 echo "[✔] OpenClaw configuration complete."
 
