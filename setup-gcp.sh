@@ -39,6 +39,23 @@ setup_secret() {
     # Check if secret already exists
     if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
         echo -e "${GREEN}[✔] Секрет '$secret_name' вже існує.${NC}"
+        echo -n "Бажаєте оновити його значення? (y/N): "
+        read -r update_val
+        if [[ "$update_val" =~ ^[Yy]$ ]]; then
+            # Read the secret value securely
+            echo -n "$prompt_text: "
+            read -s secret_val
+            echo ""
+            
+            if [ -z "$secret_val" ]; then
+                echo -e "${RED}Помилка: Значення не може бути порожнім.${NC}"
+                exit 1
+            fi
+            
+            # Add new version
+            echo -n "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --quiet
+            echo -e "${GREEN}[✔] Значення секрету '$secret_name' оновлено.${NC}"
+        fi
     else
         echo -e "${YELLOW}[!] Секрет '$secret_name' не знайдено. Створюємо його...${NC}"
         gcloud secrets create "$secret_name" --replication-policy="automatic" --quiet
