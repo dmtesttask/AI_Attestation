@@ -94,7 +94,7 @@ sudo -u openclaw -i openclaw onboard --non-interactive \
 
 # Configure LLM provider settings (timeouts, models)
 echo "[...] Configuring Google Gemini provider timeout and settings..."
-sudo -u openclaw -i openclaw config set models.providers.google-gemini '{"api": "google-generative-ai", "baseUrl": "https://generativelanguage.googleapis.com", "timeoutSeconds": 300, "models": [{"id": "gemma-4-31b-it", "name": "Gemma 4 31B"}]}' --strict-json --merge
+sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\": \"google-generative-ai\", \"baseUrl\": \"https://generativelanguage.googleapis.com\", \"timeoutSeconds\": 300, \"apiKey\": \"$GEMINI_API_KEY\", \"models\": [{\"id\": \"gemma-4-31b-it\", \"name\": \"Gemma 4 31B\"}]}" --strict-json --merge
 
 # Set default LLM model
 echo "[...] Setting Google Gemma 4 31B as default model..."
@@ -135,6 +135,7 @@ ExecStart=$OPENCLAW_PATH gateway --force
 Restart=always
 RestartSec=5
 Environment=PATH=/usr/bin:/usr/local/bin:/bin:/usr/sbin:/sbin
+Environment=GEMINI_API_KEY=$GEMINI_API_KEY
 
 [Install]
 WantedBy=multi-user.target
