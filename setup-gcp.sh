@@ -74,6 +74,7 @@ setup_secret() {
         echo -n "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --quiet
         echo -e "${GREEN}[✔] Секрет '$secret_name' створено, значення збережено.${NC}"
     fi
+    unset secret_val
 }
 
 setup_secret "openclaw-gemini-api-key" "Введіть ваш Gemini API Key (отриманий на aistudio.google.com)"

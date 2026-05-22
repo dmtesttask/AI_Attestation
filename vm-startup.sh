@@ -14,9 +14,9 @@ echo "[...] Updating packages..."
 apt-get update -y
 apt-get install -y curl jq git build-essential
 
-# 2. Install Node.js 22
-echo "[...] Installing Node.js 22 LTS..."
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+# 2. Install Node.js 24
+echo "[...] Installing Node.js 24 LTS..."
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt-get install -y nodejs
 echo "[✔] Node.js version: $(node -v)"
 echo "[✔] NPM version: $(npm -v)"
@@ -24,9 +24,7 @@ echo "[✔] NPM version: $(npm -v)"
 # 3. Install OpenClaw CLI globally
 echo "[...] Installing OpenClaw CLI globally..."
 npm install -g openclaw@latest
-cd "$(npm root -g)/openclaw"
-node scripts/postinstall-bundled-plugins.mjs
-cd -
+(cd "$(npm root -g)/openclaw" && node scripts/postinstall-bundled-plugins.mjs)
 echo "[✔] OpenClaw installed successfully."
 
 # 4. Create dedicated user
@@ -88,6 +86,8 @@ echo "[...] Initializing OpenClaw environment..."
 sudo -u openclaw -i openclaw onboard --non-interactive \
   --accept-risk \
   --skip-health \
+  --skip-bootstrap \
+  --skip-skills \
   --mode local \
   --auth-choice gemini-api-key \
   --gemini-api-key "$GEMINI_API_KEY"
@@ -108,7 +108,22 @@ sudo -u openclaw -i openclaw config set channels.telegram.dmPolicy "pairing"
 
 # Configure subagent execution permissions (allowAgents)
 echo "[...] Configuring subagent permissions..."
-sudo -u openclaw -i openclaw config set agents.defaults.subagents.allowAgents '["academic-critic", "art-director", "music-historian", "music-pedagogue", "music-performer", "music-theorist", "radical-curator"]' --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.subagents.allowAgents '["thesis-pedant", "thesis-practitioner", "thesis-visionary", "session-moderator"]' --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.subagents.maxConcurrent 1
+sudo -u openclaw -i openclaw config set agents.defaults.subagents.runTimeoutSeconds 300
+
+# Configure tool profile to enable sessions_spawn / sessions_yield for orchestration
+echo "[...] Configuring tool profile..."
+sudo -u openclaw -i openclaw config set tools.profile '"coding"'
+
+# Configure Telegram UX enhancements
+echo "[...] Configuring Telegram UX (custom commands, streaming)..."
+sudo -u openclaw -i openclaw config set channels.telegram.customCommands '[{"command":"defend","description":"Почати захист курсової роботи"},{"command":"end","description":"Завершити захист"}]' --strict-json --merge
+sudo -u openclaw -i openclaw config set channels.telegram.streaming '"partial"'
+
+# Configure session reset and isolation
+echo "[...] Configuring session management..."
+sudo -u openclaw -i openclaw config set session.reset '{"mode":"idle","idleMinutes":120}' --strict-json --merge
 
 # Rebuild the plugin registry for the openclaw user to prevent stale/missing plugin errors
 echo "[...] Rebuilding plugin registry..."
@@ -118,6 +133,14 @@ echo "[✔] OpenClaw configuration complete."
 
 # 7. Create Systemd Service
 echo "[...] Registering OpenClaw Gateway as a systemd service..."
+
+# Write credentials to a protected environment file (never inline in unit files)
+cat <<EOF > /home/openclaw/.env
+GEMINI_API_KEY=$GEMINI_API_KEY
+EOF
+chmod 600 /home/openclaw/.env
+chown openclaw:openclaw /home/openclaw/.env
+
 OPENCLAW_PATH=$(which openclaw)
 
 cat <<EOF > /etc/systemd/system/openclaw.service
@@ -134,8 +157,9 @@ WorkingDirectory=/home/openclaw
 ExecStart=$OPENCLAW_PATH gateway --force
 Restart=always
 RestartSec=5
+EnvironmentFile=/home/openclaw/.env
 Environment=PATH=/usr/bin:/usr/local/bin:/bin:/usr/sbin:/sbin
-Environment=GEMINI_API_KEY=$GEMINI_API_KEY
+Environment=OPENCLAW_SERVICE_REPAIR_POLICY=external
 
 [Install]
 WantedBy=multi-user.target
