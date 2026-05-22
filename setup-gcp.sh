@@ -38,10 +38,31 @@ setup_secret() {
     
     # Check if secret already exists
     if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
-        echo -e "${GREEN}[✔] Секрет '$secret_name' вже існує.${NC}"
-        echo -n "Бажаєте оновити його значення? (y/N): "
-        read -r update_val
-        if [[ "$update_val" =~ ^[Yy]$ ]]; then
+        # Check if secret has any active/enabled versions
+        local has_versions
+        has_versions=$(gcloud secrets versions list "$secret_name" --filter="state=ENABLED" --format="value(name)" --limit=1 2>/dev/null || echo "")
+        
+        if [ -n "$has_versions" ]; then
+            echo -e "${GREEN}[✔] Секрет '$secret_name' вже існує та містить значення.${NC}"
+            echo -n "Бажаєте оновити його значення? (y/N): "
+            read -r update_val
+            if [[ "$update_val" =~ ^[Yy]$ ]]; then
+                # Read the secret value securely
+                echo -n "$prompt_text: "
+                read -s secret_val
+                echo ""
+                
+                if [ -z "$secret_val" ]; then
+                    echo -e "${RED}Помилка: Значення не може бути порожнім.${NC}"
+                    exit 1
+                fi
+                
+                # Add new version
+                echo -n "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --quiet
+                echo -e "${GREEN}[✔] Значення секрету '$secret_name' оновлено.${NC}"
+            fi
+        else
+            echo -e "${YELLOW}[!] Секрет '$secret_name' існує, але не містить активних версій.${NC}"
             # Read the secret value securely
             echo -n "$prompt_text: "
             read -s secret_val
@@ -52,9 +73,9 @@ setup_secret() {
                 exit 1
             fi
             
-            # Add new version
+            # Add version
             echo -n "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --quiet
-            echo -e "${GREEN}[✔] Значення секрету '$secret_name' оновлено.${NC}"
+            echo -e "${GREEN}[✔] Секрет '$secret_name' успішно ініціалізовано значенням.${NC}"
         fi
     else
         echo -e "${YELLOW}[!] Секрет '$secret_name' не знайдено. Створюємо його...${NC}"
@@ -167,10 +188,12 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="sudo -u openclaw -i mkdi
 echo -e "${YELLOW}[...] Передача файлів...${NC}"
 gcloud compute scp --recurse ./config/agents/* "${VM_NAME}:/tmp/openclaw-agents/" --zone="$ZONE" --quiet
 gcloud compute scp ./config/workspace/AGENTS.md "${VM_NAME}:/tmp/AGENTS.md" --zone="$ZONE" --quiet
+gcloud compute scp ./config/workspace/SOUL.md "${VM_NAME}:/tmp/SOUL.md" --zone="$ZONE" --quiet
 
 # Move files to openclaw directory and change ownership
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
   sudo mv /tmp/AGENTS.md /home/openclaw/.openclaw/workspace/AGENTS.md
+  sudo mv /tmp/SOUL.md /home/openclaw/.openclaw/workspace/SOUL.md
   # Move each agent folder from /tmp/openclaw-agents to ~/.openclaw/agents/
   for agent_path in /tmp/openclaw-agents/* ; do
     if [ -d \"\$agent_path\" ]; then
