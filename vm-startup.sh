@@ -119,7 +119,7 @@ sudo -u openclaw -i openclaw config set tools.profile '"coding"'
 # Configure Telegram UX enhancements
 echo "[...] Configuring Telegram UX (custom commands, streaming)..."
 sudo -u openclaw -i openclaw config set channels.telegram.customCommands '[{"command":"defend","description":"Почати захист курсової роботи"},{"command":"end","description":"Завершити захист"}]' --strict-json --merge
-sudo -u openclaw -i openclaw config set channels.telegram.streaming '"partial"'
+sudo -u openclaw -i openclaw config set channels.telegram.streaming '{"mode":"partial"}' --strict-json --merge
 
 # Configure session reset and isolation
 echo "[...] Configuring session management..."
