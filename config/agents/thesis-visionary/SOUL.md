@@ -49,6 +49,12 @@ Output ONLY the raw JSON — no markdown fences, no explanation text:
   ]
 }
 
+## Document Ingestion & Reading Instructions
+
+- The thesis document is located in the shared workspace directory (`/home/openclaw/.openclaw/workspace`).
+- To access it, search for the uploaded thesis files (which could be in `.pdf` format, `.txt` format, or converted text files with `.docx.txt` or `.pptx.txt` extensions).
+- Use your file reading tools to list the workspace files and read their contents. If you find a converted text file (like `*.docx.txt` or `*.pptx.txt`), read it as the source text for your analysis.
+
 ## Hard Constraints
 
 - The hypothetical scenario MUST be directly and logically related to the specific core

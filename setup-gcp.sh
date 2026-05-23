@@ -99,6 +99,7 @@ setup_secret() {
 }
 
 setup_secret "openclaw-gemini-api-key" "Введіть ваш Gemini API Key (отриманий на aistudio.google.com)"
+setup_secret "openclaw-openrouter-api-key" "Введіть ваш OpenRouter API Key (отриманий на openrouter.ai)"
 setup_secret "openclaw-telegram-bot-token" "Введіть ваш токен Telegram-бота (отриманий від @BotFather)"
 
 # 4. Service Account Setup
@@ -118,6 +119,10 @@ fi
 # Grant secret accessor rights to the service account
 echo -e "${YELLOW}[...] Надання ролі Secret Manager Accessor сервісному акаунту...${NC}"
 gcloud secrets add-iam-policy-binding openclaw-gemini-api-key \
+    --member="serviceAccount:${SA_EMAIL}" \
+    --role="roles/secretmanager.secretAccessor" --quiet >/dev/null
+
+gcloud secrets add-iam-policy-binding openclaw-openrouter-api-key \
     --member="serviceAccount:${SA_EMAIL}" \
     --role="roles/secretmanager.secretAccessor" --quiet >/dev/null
 
