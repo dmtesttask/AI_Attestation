@@ -194,11 +194,16 @@ echo -e "${YELLOW}[...] Передача файлів...${NC}"
 gcloud compute scp --recurse ./config/agents/* "${VM_NAME}:/tmp/openclaw-agents/" --zone="$ZONE" --quiet
 gcloud compute scp ./config/workspace/AGENTS.md "${VM_NAME}:/tmp/AGENTS.md" --zone="$ZONE" --quiet
 gcloud compute scp ./config/workspace/SOUL.md "${VM_NAME}:/tmp/SOUL.md" --zone="$ZONE" --quiet
+gcloud compute scp ./config/workspace/office_watcher.py "${VM_NAME}:/tmp/office_watcher.py" --zone="$ZONE" --quiet
 
 # Move files to openclaw directory and change ownership
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
   sudo mv /tmp/AGENTS.md /home/openclaw/.openclaw/workspace/AGENTS.md
   sudo mv /tmp/SOUL.md /home/openclaw/.openclaw/workspace/SOUL.md
+  sudo mv /tmp/office_watcher.py /home/openclaw/office_watcher.py
+  sudo chown openclaw:openclaw /home/openclaw/office_watcher.py
+  sudo chmod +x /home/openclaw/office_watcher.py
+
   # Move each agent folder from /tmp/openclaw-agents to ~/.openclaw/agents/
   for agent_path in /tmp/openclaw-agents/* ; do
     if [ -d \"\$agent_path\" ]; then
@@ -232,6 +237,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
   fi
 
   sudo chown -R openclaw:openclaw /home/openclaw/.openclaw
+  sudo systemctl restart openclaw-office-watcher
   sudo systemctl restart openclaw
 " --quiet
 

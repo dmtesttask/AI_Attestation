@@ -167,8 +167,10 @@ import time
 import zipfile
 import xml.etree.ElementTree as ET
 import re
+import shutil
 
-WATCH_DIR = "/home/openclaw/.openclaw/workspace"
+WATCH_DIR = "/home/openclaw/.openclaw/media/inbound"
+DEST_DIR = "/home/openclaw/.openclaw/workspace"
 
 def docx_to_txt(docx_path, txt_path):
     try:
@@ -213,13 +215,14 @@ def main():
     print(f"Starting Office File Watcher on {WATCH_DIR}...")
     processed_files = set()
     
-    # Ensure directory exists
+    # Ensure directories exist
     os.makedirs(WATCH_DIR, exist_ok=True)
+    os.makedirs(DEST_DIR, exist_ok=True)
     
     # Initial scan to skip already existing files
     for root_dir, dirs, files in os.walk(WATCH_DIR):
         for file in files:
-            if file.endswith(('.docx', '.pptx')):
+            if file.endswith(('.docx', '.pptx', '.pdf')):
                 processed_files.add(os.path.join(root_dir, file))
                 
     while True:
@@ -227,14 +230,43 @@ def main():
             for root_dir, dirs, files in os.walk(WATCH_DIR):
                 for file in files:
                     filepath = os.path.join(root_dir, file)
-                    if file.endswith(('.docx', '.pptx')) and filepath not in processed_files:
+                    if file.endswith(('.docx', '.pptx', '.pdf')) and filepath not in processed_files:
                         # Wait a bit to ensure file is fully written
                         time.sleep(2)
-                        txt_path = filepath + ".txt"
+                        
+                        # Determine extension
+                        ext = ""
                         if file.endswith('.docx'):
-                            docx_to_txt(filepath, txt_path)
+                            ext = "docx"
                         elif file.endswith('.pptx'):
-                            pptx_to_txt(filepath, txt_path)
+                            ext = "pptx"
+                        elif file.endswith('.pdf'):
+                            ext = "pdf"
+                            
+                        # Clean old thesis files in destination workspace to avoid stale analysis
+                        for old_file in os.listdir(DEST_DIR):
+                            if old_file.startswith("thesis."):
+                                try:
+                                    os.remove(os.path.join(DEST_DIR, old_file))
+                                except Exception as e:
+                                    print(f"[Err] Failed to delete old file {old_file}: {e}")
+                                    
+                        # Copy to workspace as thesis.<ext>
+                        dest_path = os.path.join(DEST_DIR, f"thesis.{ext}")
+                        try:
+                            shutil.copy2(filepath, dest_path)
+                            print(f"[✔] Copied: {filepath} -> {dest_path}")
+                        except Exception as e:
+                            print(f"[Err] Failed to copy {filepath}: {e}")
+                            
+                        # Convert to txt if docx/pptx
+                        if ext in ('docx', 'pptx'):
+                            txt_path = os.path.join(DEST_DIR, f"thesis.{ext}.txt")
+                            if ext == 'docx':
+                                docx_to_txt(dest_path, txt_path)
+                            elif ext == 'pptx':
+                                pptx_to_txt(dest_path, txt_path)
+                                
                         processed_files.add(filepath)
             time.sleep(5)
         except KeyboardInterrupt:
