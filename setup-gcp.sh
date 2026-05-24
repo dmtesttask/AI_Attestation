@@ -208,6 +208,29 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     fi
   done
   sudo rm -rf /tmp/openclaw-agents
+
+  # 1. Install pandoc if missing on the VM
+  if ! command -v pandoc &>/dev/null; then
+    echo '[...] Installing pandoc on VM...'
+    sudo apt-get update && sudo apt-get install -y pandoc
+  fi
+
+  # 2. Re-propagate auth profiles from VM .env file (since subagent directories were wiped/moved)
+  if [ -f /home/openclaw/.env ]; then
+    echo '[...] Regenerating auth profiles for main and sub-agents...'
+    GEMINI_API_KEY=\$(grep -oP '^GEMINI_API_KEY=\K.*' /home/openclaw/.env)
+    OPENROUTER_API_KEY=\$(grep -oP '^OPENROUTER_API_KEY=\K.*' /home/openclaw/.env)
+    
+    for agent_id in main thesis-pedant thesis-practitioner thesis-visionary session-moderator; do
+      sudo -u openclaw mkdir -p /home/openclaw/.openclaw/agents/\$agent_id/agent
+      sudo -u openclaw jq -n \
+        --arg gemini \"\$GEMINI_API_KEY\" \
+        --arg openrouter \"\$OPENROUTER_API_KEY\" \
+        '{version: 1, profiles: {\"google-gemini:default\": {type: \"api_key\", provider: \"google-gemini\", key: \$gemini}, \"openrouter:default\": {type: \"api_key\", provider: \"openrouter\", key: \$openrouter}}}' \
+        | sudo -u openclaw tee /home/openclaw/.openclaw/agents/\$agent_id/agent/auth-profiles.json >/dev/null
+    done
+  fi
+
   sudo chown -R openclaw:openclaw /home/openclaw/.openclaw
   sudo systemctl restart openclaw
 " --quiet

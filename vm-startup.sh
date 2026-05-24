@@ -9,10 +9,10 @@ echo "=== OpenClaw Provisioning Started: $(date) ==="
 
 set -euo pipefail
 
-# 1. Update system & install baseline tools
+# 1. Update system & install baseline tools (including pandoc for docx text extraction)
 echo "[...] Updating packages..."
 apt-get update -y
-apt-get install -y curl jq git build-essential
+apt-get install -y curl jq git build-essential pandoc
 
 # 2. Install Node.js 24
 echo "[...] Installing Node.js 24 LTS..."
@@ -93,19 +93,30 @@ sudo -u openclaw -i openclaw onboard --non-interactive \
   --auth-choice gemini-api-key \
   --gemini-api-key "$GEMINI_API_KEY"
 
+# Directly write/propagate auth-profiles.json for main and all subagents
+echo "[...] Writing API keys to main and subagent auth profiles..."
+for agent_id in main thesis-pedant thesis-practitioner thesis-visionary session-moderator; do
+    sudo -u openclaw mkdir -p /home/openclaw/.openclaw/agents/${agent_id}/agent
+    sudo -u openclaw jq -n \
+      --arg gemini "$GEMINI_API_KEY" \
+      --arg openrouter "$OPENROUTER_API_KEY" \
+      '{version: 1, profiles: {"google-gemini:default": {type: "api_key", provider: "google-gemini", key: $gemini}, "openrouter:default": {type: "api_key", provider: "openrouter", key: $openrouter}}}' \
+      | sudo -u openclaw tee /home/openclaw/.openclaw/agents/${agent_id}/agent/auth-profiles.json >/dev/null
+done
+
 # Configure LLM provider settings (timeouts, models)
 echo "[...] Configuring Google Gemini provider timeout and settings..."
-sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\": \"google-generative-ai\", \"baseUrl\": \"https://generativelanguage.googleapis.com\", \"timeoutSeconds\": 300, \"apiKey\": \"$GEMINI_API_KEY\", \"models\": [{\"id\": \"gemini-3.1-flash-lite\", \"name\": \"Gemini 3.1 Flash Lite\"}]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\": \"google-generative-ai\", \"baseUrl\": \"https://generativelanguage.googleapis.com\", \"timeoutSeconds\": 300, \"apiKey\": \"$GEMINI_API_KEY\", \"models\": [{\"id\": \"gemini-2.5-flash\", \"name\": \"Gemini 2.5 Flash\"}]}" --strict-json --merge
 
 # Configure OpenRouter provider settings (timeouts, models)
 echo "[...] Configuring OpenRouter provider settings..."
 sudo -u openclaw -i openclaw config set models.providers.openrouter "{\"api\": \"openai-completions\", \"baseUrl\": \"https://openrouter.ai/api/v1\", \"timeoutSeconds\": 300, \"apiKey\": \"$OPENROUTER_API_KEY\", \"models\": [{\"id\": \"openrouter/free\", \"name\": \"OpenRouter Free Router\", \"input\": [\"text\", \"image\"], \"contextWindow\": 128000, \"maxTokens\": 4096}, {\"id\": \"meta-llama/llama-3.3-70b-instruct:free\", \"name\": \"Llama 3.3 70B (Free)\", \"input\": [\"text\"], \"contextWindow\": 128000, \"maxTokens\": 4096}, {\"id\": \"google/gemini-2.5-flash:free\", \"name\": \"Gemini 2.5 Flash (Free)\", \"input\": [\"text\", \"image\"], \"contextWindow\": 1000000, \"maxTokens\": 8192}, {\"id\": \"deepseek/deepseek-r1:free\", \"name\": \"DeepSeek R1 (Free)\", \"input\": [\"text\"], \"contextWindow\": 64000, \"maxTokens\": 8192}]}" --strict-json --merge
 
-# Set default LLM models and routing (primary model set to Google Gemini 3.1 Flash Lite)
+# Set default LLM models and routing (primary model set to Google Gemini 2.5 Flash)
 echo "[...] Setting default LLM models and routing..."
-sudo -u openclaw -i openclaw config set agents.defaults.model "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/meta-llama/llama-3.3-70b-instruct:free\", \"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
-sudo -u openclaw -i openclaw config set agents.defaults.pdfModel "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
-sudo -u openclaw -i openclaw config set agents.defaults.imageModel "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.model "{\"primary\": \"google-gemini/gemini-2.5-flash\", \"fallbacks\": [\"openrouter/meta-llama/llama-3.3-70b-instruct:free\", \"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.pdfModel "{\"primary\": \"google-gemini/gemini-2.5-flash\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.imageModel "{\"primary\": \"google-gemini/gemini-2.5-flash\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
 
 # Configure allowed MIME types to include Office documents (DOCX, PPTX)
 echo "[...] Configuring allowed MIME types to include DOCX and PPTX..."
@@ -125,7 +136,7 @@ sudo -u openclaw -i openclaw config set agents.defaults.subagents.runTimeoutSeco
 
 # Configure shared workspace for agents to allow subagents to see the uploaded thesis documents
 echo "[...] Configuring agent workspaces..."
-sudo -u openclaw -i openclaw config set agents.list '[{"id": "main", "workspace": "/home/openclaw/.openclaw/workspace", "default": true, "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-pedant", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-practitioner", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-visionary", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "session-moderator", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}]' --strict-json --replace
+sudo -u openclaw -i openclaw config set agents.list '[{"id": "main", "workspace": "/home/openclaw/.openclaw/workspace", "default": true, "model": {"primary": "google-gemini/gemini-2.5-flash", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-pedant", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-2.5-flash", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-practitioner", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-2.5-flash", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-visionary", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-2.5-flash", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "session-moderator", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-2.5-flash", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}]' --strict-json --replace
 
 
 # Configure tool profile to enable sessions_spawn / sessions_yield for orchestration
