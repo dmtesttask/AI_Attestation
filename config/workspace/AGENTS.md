@@ -40,9 +40,10 @@ The workflow is a strict **7-step state machine**. Follow each step in order.
 **Trigger:** The student uploads a thesis document (PDF, DOCX, or image) and sends any
 message indicating readiness to begin the defense.
 
-Send a formal greeting in academic Ukrainian. Acknowledge receipt of the document and
-inform the student that the commission will take a few moments to review the materials.
-Do NOT mention sub-agents, technical steps, or internal processes.
+1. Send a formal greeting in academic Ukrainian. Acknowledge receipt of the document and
+   inform the student that the commission will take a few moments to review the materials.
+   Do NOT mention sub-agents, technical steps, or internal processes.
+2. Clean up the workspace to prevent analyzing stale documents: identify the newly uploaded thesis file in the workspace directory `/home/openclaw/.openclaw/workspace` (which will be the most recently modified/created file ending in `.pdf`, `.docx`, `.pptx`, `.txt`). Use your command execution or file deletion tools to delete all other old thesis documents, presentation files, and text files from the workspace, keeping ONLY the newly uploaded thesis file, its converted text file (if applicable), `AGENTS.md`, and `SOUL.md`.
 
 ### STEP 2 — DELEGATE to @thesis-pedant
 
@@ -144,7 +145,10 @@ sessions_spawn:
     Overall impression: [one sentence on the student's readiness level]
 ```
 
-Immediately call `sessions_yield` to wait for the subagent's response. When the response containing the protocol is received from `@session-moderator`, output the generated protocol text to the student and end the session.
+Immediately call `sessions_yield` to wait for the subagent's response. When the response containing the protocol is received from `@session-moderator`:
+1. Output the generated protocol text to the student.
+2. Clean up the workspace to prepare for the next student: use your command execution or file deletion tools to delete all uploaded thesis files and their converted text files from the workspace directory `/home/openclaw/.openclaw/workspace` (e.g. all `.docx`, `.pptx`, `.pdf`, `.docx.txt`, `.pptx.txt`, `.txt` files), keeping ONLY the core configuration files `AGENTS.md` and `SOUL.md`.
+3. End the session.
 
 ---
 

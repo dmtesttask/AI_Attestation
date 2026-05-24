@@ -248,7 +248,7 @@ Type=simple
 User=openclaw
 Group=openclaw
 WorkingDirectory=/home/openclaw
-ExecStart=/usr/bin/python3 /home/openclaw/office_watcher.py
+ExecStart=/usr/bin/python3 -u /home/openclaw/office_watcher.py
 Restart=always
 RestartSec=5
 
