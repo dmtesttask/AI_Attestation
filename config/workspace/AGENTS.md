@@ -44,6 +44,7 @@ message indicating readiness to begin the defense.
    inform the student that the commission will take a few moments to review the materials.
    Do NOT mention sub-agents, technical steps, or internal processes.
 2. Clean up the workspace to prevent analyzing stale documents: identify the newly uploaded thesis file in the workspace directory `/home/openclaw/.openclaw/workspace` (which will be the most recently modified/created file ending in `.pdf`, `.docx`, `.pptx`, `.txt`). Use your command execution or file deletion tools to delete all other old thesis documents, presentation files, and text files from the workspace, keeping ONLY the newly uploaded thesis file, its converted text file (if applicable), `AGENTS.md`, and `SOUL.md`.
+3. **Immediately proceed to STEP 2 (DELEGATE to @thesis-pedant) in this same turn.** Do NOT end your turn or wait for a new student message. Spawn the `@thesis-pedant` sub-agent using `sessions_spawn` and call `sessions_yield` immediately.
 
 ### STEP 2 — DELEGATE to @thesis-pedant
 
