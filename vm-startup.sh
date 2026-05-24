@@ -101,11 +101,11 @@ sudo -u openclaw -i openclaw config set models.providers.google-gemini "{\"api\"
 echo "[...] Configuring OpenRouter provider settings..."
 sudo -u openclaw -i openclaw config set models.providers.openrouter "{\"api\": \"openai-completions\", \"baseUrl\": \"https://openrouter.ai/api/v1\", \"timeoutSeconds\": 300, \"apiKey\": \"$OPENROUTER_API_KEY\", \"models\": [{\"id\": \"openrouter/free\", \"name\": \"OpenRouter Free Router\", \"input\": [\"text\", \"image\"], \"contextWindow\": 128000, \"maxTokens\": 4096}, {\"id\": \"meta-llama/llama-3.3-70b-instruct:free\", \"name\": \"Llama 3.3 70B (Free)\", \"input\": [\"text\"], \"contextWindow\": 128000, \"maxTokens\": 4096}, {\"id\": \"google/gemini-2.5-flash:free\", \"name\": \"Gemini 2.5 Flash (Free)\", \"input\": [\"text\", \"image\"], \"contextWindow\": 1000000, \"maxTokens\": 8192}, {\"id\": \"deepseek/deepseek-r1:free\", \"name\": \"DeepSeek R1 (Free)\", \"input\": [\"text\"], \"contextWindow\": 64000, \"maxTokens\": 8192}]}" --strict-json --merge
 
-# Set default LLM models and routing (primary model set to OpenRouter Free Router)
+# Set default LLM models and routing (primary model set to Google Gemini 3.1 Flash Lite)
 echo "[...] Setting default LLM models and routing..."
-sudo -u openclaw -i openclaw config set agents.defaults.model "{\"primary\": \"openrouter/openrouter/free\", \"fallbacks\": [\"openrouter/meta-llama/llama-3.3-70b-instruct:free\", \"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
-sudo -u openclaw -i openclaw config set agents.defaults.pdfModel "{\"primary\": \"openrouter/google/gemini-2.5-flash:free\", \"fallbacks\": [\"openrouter/openrouter/free\"]}" --strict-json --merge
-sudo -u openclaw -i openclaw config set agents.defaults.imageModel "{\"primary\": \"openrouter/google/gemini-2.5-flash:free\", \"fallbacks\": [\"openrouter/openrouter/free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.model "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/meta-llama/llama-3.3-70b-instruct:free\", \"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.pdfModel "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
+sudo -u openclaw -i openclaw config set agents.defaults.imageModel "{\"primary\": \"google-gemini/gemini-3.1-flash-lite\", \"fallbacks\": [\"openrouter/google/gemini-2.5-flash:free\"]}" --strict-json --merge
 
 # Configure allowed MIME types to include Office documents (DOCX, PPTX)
 echo "[...] Configuring allowed MIME types to include DOCX and PPTX..."
@@ -125,7 +125,7 @@ sudo -u openclaw -i openclaw config set agents.defaults.subagents.runTimeoutSeco
 
 # Configure shared workspace for agents to allow subagents to see the uploaded thesis documents
 echo "[...] Configuring agent workspaces..."
-sudo -u openclaw -i openclaw config set agents.list '[{"id": "main", "workspace": "/home/openclaw/.openclaw/workspace", "default": true}, {"id": "thesis-pedant", "workspace": "/home/openclaw/.openclaw/workspace"}, {"id": "thesis-practitioner", "workspace": "/home/openclaw/.openclaw/workspace"}, {"id": "thesis-visionary", "workspace": "/home/openclaw/.openclaw/workspace"}, {"id": "session-moderator", "workspace": "/home/openclaw/.openclaw/workspace"}]' --strict-json --replace
+sudo -u openclaw -i openclaw config set agents.list '[{"id": "main", "workspace": "/home/openclaw/.openclaw/workspace", "default": true, "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-pedant", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-practitioner", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "thesis-visionary", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}, {"id": "session-moderator", "workspace": "/home/openclaw/.openclaw/workspace", "model": {"primary": "google-gemini/gemini-3.1-flash-lite", "fallbacks": ["openrouter/meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]}}]' --strict-json --replace
 
 
 # Configure tool profile to enable sessions_spawn / sessions_yield for orchestration
@@ -134,7 +134,7 @@ sudo -u openclaw -i openclaw config set tools.profile '"coding"'
 
 # Configure Telegram UX enhancements
 echo "[...] Configuring Telegram UX (custom commands, streaming)..."
-sudo -u openclaw -i openclaw config set channels.telegram.customCommands '[{"command":"defend","description":"Почати захист курсової роботи"},{"command":"end","description":"Завершити захист"}]' --strict-json --merge
+sudo -u openclaw -i openclaw config set channels.telegram.customCommands '[{"command":"new","description":"Почати новий захист"},{"command":"end","description":"Завершити захист"}]' --strict-json --merge
 sudo -u openclaw -i openclaw config set channels.telegram.streaming '{"mode":"partial"}' --strict-json --merge
 
 # Configure session reset and isolation

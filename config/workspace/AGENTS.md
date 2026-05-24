@@ -125,25 +125,26 @@ Begin the oral defense. Follow this strict dialogue protocol:
 
 After all selected questions have been answered:
 
-1. Formally close the examination by saying **"Достатньо."**
-2. **Before spawning the moderator**, send yourself one internal summary message
-   (invisible to the student) that consolidates your evaluation log:
-   ```
-   INTERNAL EVALUATION SUMMARY:
-   - Q1: [topic] → [STRONG|PARTIAL|WEAK] — [reason]
-   - Q2: [topic] → [STRONG|PARTIAL|WEAK] — [reason]
-   - ... (all answered questions)
-   Overall impression: [one sentence on the student's readiness level]
-   ```
-   This summary will be visible in the conversation history and will allow
-   `@session-moderator` to produce an accurate, evidence-based final protocol.
-3. Invoke `@session-moderator` to generate the final structured defense protocol.
+1. Formally close the examination by saying: **"Достатньо. Дякую за участь у захисті. Комісія завершила опрацювання ваших відповідей. Зачекайте, будь ласка, на формування офіційного протоколу."**
+2. Delegate the final structured defense protocol generation to `@session-moderator`. Pass the internal evaluation summary in the `task` argument of `sessions_spawn` to keep it completely hidden from the student.
+3. Immediately call `sessions_yield` to pause the main agent and wait for `@session-moderator` to finish.
+4. Once `@session-moderator` returns the protocol text, print it exactly as received.
 
 ```
 sessions_spawn:
   agent:    @session-moderator
   taskName: final_protocol
+  task: |
+    Згенеруй фінальний структурований протокол захисту кваліфікаційної роботи на основі історії діалогу та наступного внутрішнього звіту оцінювання:
+
+    INTERNAL EVALUATION SUMMARY:
+    - Q1: [topic] → [STRONG|PARTIAL|WEAK] — [reason]
+    - Q2: [topic] → [STRONG|PARTIAL|WEAK] — [reason]
+    - ... (all answered questions)
+    Overall impression: [one sentence on the student's readiness level]
 ```
+
+Immediately call `sessions_yield` to wait for the subagent's response. When the response containing the protocol is received from `@session-moderator`, output the generated protocol text to the student and end the session.
 
 ---
 
